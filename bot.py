@@ -85,7 +85,7 @@ def vine_choice4(update, context):
         "информация: {guests}.".format(**reservation_data)
         )
     context.bot.send_message(
-        chat_id='1106421798',
+        chat_id='tvoi token',
         text="бронь на  {day} {month} "
         "в {time} для {contact} гостей. Контактная"
         "информация: {guests}.".format(**reservation_data)
@@ -138,7 +138,7 @@ def kuhny(update, context):
                              reply_markup=reply_markup)
 
 
-updater = Updater(token='6134349352:AAFkZye0yzWv42zytlJMSM2uGYp6Hc3clIU',
+updater = Updater(token='Token bota',
                   use_context=True)
 
 # Create an instance of the Dispatcher class using updater.dispatcher
