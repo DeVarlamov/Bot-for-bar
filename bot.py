@@ -1,165 +1,84 @@
-
-from telegram.ext import Updater
-from telegram.ext import (CommandHandler,
-                          ConversationHandler,
-                          MessageHandler,
-                          Filters)
+import datetime
 import telegram
-
-
-# Определите состояния для разговора
-VINE_DAY = 0
-VINE_MONTH = 1
-VINE_TIME = 2
-VINE_GUESTS = 3
-VINE_CONTACT = 4
-
+import telegram_bot_calendar
+from telegram import ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 
 def start(update, context):
-    """Обработчик команды start."""
-    photo_path = 'картинки/лого.jpg'
-    photo_file = open(photo_path, 'rb')
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_file)
-    custom_keyboard = [['/menu📒', '/reserve👽']]
-    reply_markup = telegram.ReplyKeyboardMarkup(
-        custom_keyboard, one_time_keyboard=True, resize_keyboard=True)
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Мерзавчики на связи кого чего сука! 🕶",
-                             reply_markup=reply_markup)
-    photo_file.close()
+    # Отправляем приветственное сообщение
+    update.message.reply_text('Привет! Я помогу тебе забронировать место в нашем ресторане.')
 
-
-def reserve(update, context):
-    """Обработчик команды menu."""
-    context.user_data['reservation'] = {}
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Введите день (число) для резерва:")
-    return VINE_DAY
-
-
-def vine_choice1(update, context):
-    """Ввод месяца."""
-    day = update.message.text
-    context.user_data['reservation']['day'] = day
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Введите месяц (название) для резерва:")
-    return VINE_MONTH
-
-
-def vine_choice2(update, context):
-    """Ввод времени."""
-    month = update.message.text
-    context.user_data['reservation']['month'] = month
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Введите время (часы:минуты) для резерва:")
-    return VINE_TIME
-
-
-def vine_choice3(update, context):
-    """Ввод колличества гостей."""
-    time = update.message.text
-    context.user_data['reservation']['time'] = time
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Введите количество гостей для резерва:")
-    return VINE_GUESTS
-
-
-def vine_choice5(update, context):
-    """Ввод контактной информации."""
-    contact_info = update.message.text
-    context.user_data['reservation']['contact'] = contact_info
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Введите ваши контакты для обратной связи:")
-    return VINE_CONTACT
-
-
-def vine_choice4(update, context):
-    """Сообщение подтверждение брони."""
-    guests = update.message.text
-    context.user_data['reservation']['guests'] = guests
-    reservation_data = context.user_data['reservation']
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Спасибо за резерв! Ваш столик забронирован на {day} {month} "
-        "в {time} для {contact} гостей. Ваша контактная"
-        "информация: {guests}.".format(**reservation_data)
-        )
-    context.bot.send_message(
-        chat_id='1106421798',
-        text="бронь на  {day} {month} "
-        "в {time} для {contact} гостей. Контактная"
-        "информация: {guests}.".format(**reservation_data)
-        )
-
-    return ConversationHandler.END
-
-
-def menu(update, context):
-    """Меню."""
-    menu_keyboard = [['/bar🍸', '/kuhny🍖'], ['/start⏪']]
-    reply_markup = telegram.ReplyKeyboardMarkup(
-        menu_keyboard, one_time_keyboard=True, resize_keyboard=True)
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Хорошо давай 🕶",
-        reply_markup=reply_markup
+    # Создаем календарь для выбора даты
+    reply_markup = telegram_bot_calendar.create_calendar(
+        name='calendar',
+        year=datetime.datetime.now().year,
+        month=datetime.datetime.now().month,
+        day=datetime.datetime.now().day,
+        callback_prefix='calendar_'
     )
 
+    # Отправляем сообщение с календарем
+    update.message.reply_text('Выбери дату:', reply_markup=reply_markup)
 
-def bar(update, context):
-    """Бар ."""
-    photo_path = 'картинки/бар.jpg'
-    photo_file = open(photo_path, 'rb')
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_file)
+def calendar_selected(update, context):
+    # Получаем выбранную дату
+    query = update.callback_query
+    selected, date = telegram_bot_calendar.process_calendar_selection(context.bot, query)
 
-    bar_keyboard = [['/start⏪', '/menu📒']]
-    reply_markup = telegram.ReplyKeyboardMarkup(
-        bar_keyboard, one_time_keyboard=True,
-        resize_keyboard=True
-        )
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="окей 🕶",
-                             reply_markup=reply_markup)
+    # Сохраняем выбранную дату
+    context.user_data['date'] = date.strftime('%d.%m.%Y')
 
+    # Создаем кнопки для выбора времени
+    keyboard = [
+        [KeyboardButton('12:00'), KeyboardButton('13:00'), KeyboardButton('14:00')],
+        [KeyboardButton('15:00'), KeyboardButton('16:00'), KeyboardButton('17:00')],
+        [KeyboardButton('18:00'), KeyboardButton('19:00'), KeyboardButton('20:00')]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
-def kuhny(update, context):
-    """Кухня."""
-    photo_path = 'картинки/кухня.jpg'
-    photo_file = open(photo_path, 'rb')
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_file)
+    # Отправляем сообщение с кнопками для выбора времени
+    update.callback_query.message.reply_text('Выбери время:', reply_markup=reply_markup)
 
-    kuhny_keyboard = [['/start⏪', '/menu📒']]
-    reply_markup = telegram.ReplyKeyboardMarkup(
-        kuhny_keyboard, one_time_keyboard=True,
-        resize_keyboard=True
-        )
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="окей 🕶",
-                             reply_markup=reply_markup)
+def time_selected(update, context):
+    # Получаем выбранное время и дату
+    time = update.message.text
+    date = context.user_data['date']
 
+    # Сохраняем выбранное время и дату
+    context.user_data['time'] = time
+    context.user_data['datetime'] = f'{date} {time}'
 
-updater = Updater(token='6134349352:AAFkZye0yzWv42zytlJMSM2uGYp6Hc3clIU',
-                  use_context=True)
+    # Запрашиваем количество гостей
+    update.message.reply_text('Сколько гостей будет?', reply_markup=ReplyKeyboardMarkup([['1', '2', '3', '4']], resize_keyboard=True))
 
-# Create an instance of the Dispatcher class using updater.dispatcher
-dispatcher = updater.dispatcher
-conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('reserve', reserve)],
-    states={
-        VINE_DAY: [(MessageHandler(Filters.text, vine_choice1))],
-        VINE_MONTH: [(MessageHandler(Filters.text, vine_choice2))],
-        VINE_TIME: [(MessageHandler(Filters.text, vine_choice3))],
-        VINE_CONTACT: [(MessageHandler(Filters.text, vine_choice4))],
-        VINE_GUESTS: [(MessageHandler(Filters.text, vine_choice5))],
-    },
-    fallbacks=[],)
+def guests_selected(update, context):
+    # Получаем количество гостей
+    guests = update.message.text
 
-# Add our handlers to the dispatcher
-dispatcher.add_handler(CommandHandler('start', start))
-dispatcher.add_handler(CommandHandler('menu', menu))
-dispatcher.add_handler(CommandHandler('bar', bar))
-dispatcher.add_handler(CommandHandler('kuhny', kuhny))
-dispatcher.add_handler(conv_handler)
+    # Сохраняем количество гостей и дату-время брони в базу данных или файл
+    datetime_str = context.user_data['datetime']
+    datetime_obj = datetime.datetime.strptime(datetime_str, '%d.%m.%Y %H:%M')
+    reservation_data = {'datetime': datetime_obj, 'guests': guests}
+    # сохраняем reservation_data в базу данных или файл
 
-# Start the bot
-updater.start_polling()
+    # Отправляем подтверждение бронирования
+    update.message.reply_text(f'Спасибо за бронирование! Вы забронировали место на {datetime_str} для {guests} гостей.')
+
+def main():
+    # Создаем объект updater и получаем токен из файла token.txt
+    token = '6134349352:AAFkZye0yzWv42zytlJMSM2uGYp6Hc3clIU'
+    updater = Updater(token)
+
+    # Создаем объект dispatcher и добавляем обработчики команд и сообщений
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CallbackQueryHandler(calendar_selected, pattern='^calendar'))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, time_selected))
+    dp.add_handler(MessageHandler(Filters.regex(r'^[1-4]$'), guests_selected))
+
+    # Запускаем бота
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
