@@ -17,5 +17,5 @@
    ```
 3. Запустить приложение
    ```
-   python app.py
+   python bot.py
    ```
