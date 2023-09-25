@@ -103,14 +103,6 @@ def func(message):
                                "{0.first_name}, вот наша винность".format(
                                 message.from_user), markup)
 
-    elif message.text == "Игорь гей":
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(menu, back)
-        send_photo_with_markup(message.chat.id,
-                               'картинки/Игорь.jpg',
-                               "{0.first_name}, Ты хотел сказать его "
-                               "величество Гейство?!".format(
-                                message.from_user), markup)
 
     elif message.text == "Крепач🚀":
         markup = bar_menu_markup()
